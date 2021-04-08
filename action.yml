@@ -1,0 +1,55 @@
+name: 'Publish Workflow Manifests'
+description: 'A Dispatchery V2 CI component - publish all workflow manifests via GitOps'
+author: 'Wistia'
+inputs:
+  repo_name:
+    description: 'Value of "github.event.repository.name"'
+    required: true
+  env:
+    description: 'Environment we are operating on (prod/dev/etc.)'
+    required: true
+  aws_account:
+    description: 'AWS Account ID'
+    required: true
+  eks_cluster:
+    description: 'Name of EKS cluster to publish to'
+    required: true
+  git_sha:
+    description: 'SHA of current git commit'
+    required: true
+  gitops_repo:
+    description: 'Name of repository used for GitOps'
+    required: true
+  gitops_actor:
+    description: 'GitHub bot username'
+    required: true
+  gitops_token:
+    description: 'GitHub bot username credentials'
+    required: true
+  gitops_repo_account:
+    description: 'GitHub account of GitOps repository'
+    required: true
+runs:
+  using: 'composite'
+  steps:
+    - name: Copy workflow manifests
+      run: |
+        destdir=${{ inputs.gitops_repo }}/${{ inputs.aws_account }}/${{ inputs.eks_cluster }}/${{ inputs.repo_name }}
+        mkdir -p $destdir
+        cp ${{ inputs.repo_name }}/argo-workflows/**/*yaml $destdir/ || echo "No yaml files found to copy"
+        # Render workflow template files
+        for workflow_template in $(find ${{ inputs.repo_name }}/argo-workflows/ -name "*yaml\.tmpl"); do
+          dest_file=$(basename ${workflow_template})
+          env=${{ inputs.env }} GITHUB_SHA=${{ inputs.git_sha }} envsubst '\$env \$GITHUB_SHA' < ${workflow_template} > ${destdir}/${dest_file%%.tmpl}
+        done
+      shell: bash
+    - name: Commit workflow manifests to eks-active-manifests repo
+      run: |
+        cd ${{ inputs.gitops_repo }}
+        [ -z "$(git status --porcelain)" ] && exit 0 # early-out if working dir is clean
+        git config --local user.email "${{ inputs.repo_name }}-github-actions-bot@users.noreply.github.com"
+        git config --local user.name "${{ inputs.repo_name }}-github-actions-bot"
+        git add -A
+        git commit -m "Update Argo workflows for ${{ inputs.repo_name }}"
+        git push "https://${{ inputs.gitops_actor }}:${{ inputs.gitops_token }}@github.com/${{ inputs.gitops_repo_account }}/${{ inputs.gitops_repo }}.git"
+      shell: bash
