@@ -5,17 +5,14 @@ inputs:
   repo_name:
     description: 'Value of "github.event.repository.name"'
     required: true
-  env:
-    description: 'Environment we are operating on (prod/dev/etc.)'
-    required: true
   aws_account:
     description: 'AWS Account ID'
     required: true
+  branch_slug:
+    description: 'Sluggified branch name'
+    required: true
   eks_cluster:
     description: 'Name of EKS cluster to publish to'
-    required: true
-  git_sha:
-    description: 'SHA of current git commit'
     required: true
   gitops_repo:
     description: 'Name of repository used for GitOps'
@@ -40,7 +37,7 @@ runs:
         # Render workflow template files
         for workflow_template in $(find ${{ inputs.repo_name }}/argo-workflows/ -name "*yaml\.tmpl"); do
           dest_file=$(basename ${workflow_template})
-          env=${{ inputs.env }} GITHUB_SHA=${{ inputs.git_sha }} envsubst '\$env \$GITHUB_SHA' < ${workflow_template} > ${destdir}/${dest_file%%.tmpl}
+          BRANCH_SLUG=${{ inputs.branch_slug }} GITHUB_SHA=${{ github.sha }} envsubst '\$BRANCH_SLUG \$GITHUB_SHA' < ${workflow_template} > ${destdir}/${dest_file%%.tmpl}
         done
       shell: bash
     - name: Commit workflow manifests to eks-active-manifests repo
