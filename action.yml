@@ -32,7 +32,7 @@ runs:
     - name: Copy workflow manifests
       run: |
         # Render workflow template files
-        for workflow_dir in $(find -d ${{ inputs.repo_name }}/argo-workflows/ -not -name "shared" -not -name "support"); do
+        for workflow_dir in $(find "${{ inputs.repo_name }}/argo-workflows/" -type d -not -name "shared" -not -name "support"); do
           destdir=${{ inputs.gitops_repo }}/${{ inputs.aws_account }}/${{ inputs.eks_cluster }}/${{ inputs.repo_name }}/$workflow_dir
           mkdir -p $destdir
           BRANCH_SLUG=${{ inputs.branch_slug }} GITHUB_SHA=${{ github.sha }} envsubst '\$BRANCH_SLUG \$GITHUB_SHA \$IMAGE_PREFIX' < $workflow_dir/workflow.yaml.tmpl > ${destdir}/workflow.yaml
