@@ -31,13 +31,11 @@ runs:
   steps:
     - name: Copy workflow manifests
       run: |
-        destdir=${{ inputs.gitops_repo }}/${{ inputs.aws_account }}/${{ inputs.eks_cluster }}/${{ inputs.repo_name }}
-        mkdir -p $destdir
-        cp ${{ inputs.repo_name }}/argo-workflows/**/*yaml $destdir/ || echo "No yaml files found to copy"
         # Render workflow template files
-        for workflow_template in $(find ${{ inputs.repo_name }}/argo-workflows/ -name "*yaml\.tmpl"); do
-          dest_file=$(basename ${workflow_template})
-          BRANCH_SLUG=${{ inputs.branch_slug }} GITHUB_SHA=${{ github.sha }} envsubst '\$BRANCH_SLUG \$GITHUB_SHA' < ${workflow_template} > ${destdir}/${dest_file%%.tmpl}
+        for workflow_dir in $(find -d ${{ inputs.repo_name }}/argo-workflows/ -not -name "shared" -not -name "support"); do
+          destdir=${{ inputs.gitops_repo }}/${{ inputs.aws_account }}/${{ inputs.eks_cluster }}/${{ inputs.repo_name }}/$workflow_dir
+          mkdir -p $destdir
+          BRANCH_SLUG=${{ inputs.branch_slug }} GITHUB_SHA=${{ github.sha }} envsubst '\$BRANCH_SLUG \$GITHUB_SHA' < $workflow_dir/workflow.yaml.tmpl > ${destdir}/workflow.yaml
         done
       shell: bash
     - name: Commit workflow manifests to eks-active-manifests repo
