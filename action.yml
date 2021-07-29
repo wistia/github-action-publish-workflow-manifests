@@ -31,6 +31,8 @@ runs:
   steps:
     - name: Copy workflow manifests
       run: |
+        set -e
+
         # Render workflow template files
         for workflow_dir in $(find "${{ inputs.repo_name }}/argo-workflows/" -type d -not -name "shared" -not -name "support"); do
           destdir=${{ inputs.gitops_repo }}/${{ inputs.aws_account }}/${{ inputs.eks_cluster }}/${{ inputs.repo_name }}/$workflow_dir
