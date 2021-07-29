@@ -36,7 +36,7 @@ runs:
         # Render workflow template files
         cd ${{ inputs.repo_name }}/argo-workflows/
         for workflow_dir in $(find . -type d -not -name "shared" -not -name "support" -not -name "."); do
-          destdir=${{ inputs.gitops_repo }}/${{ inputs.aws_account }}/${{ inputs.eks_cluster }}/${{ inputs.repo_name }}/$workflow_dir
+          destdir=${{ github.workspace }}/${{ inputs.gitops_repo }}/${{ inputs.aws_account }}/${{ inputs.eks_cluster }}/${{ inputs.repo_name }}/$workflow_dir
           mkdir -p $destdir
           BRANCH_SLUG=${{ inputs.branch_slug }} GITHUB_SHA=${{ github.sha }} envsubst '\$BRANCH_SLUG \$GITHUB_SHA \$IMAGE_PREFIX' < $workflow_dir/workflow.yaml.tmpl > ${destdir}/workflow.yaml
         done
