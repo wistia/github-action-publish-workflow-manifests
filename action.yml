@@ -30,6 +30,8 @@ runs:
   using: 'composite'
   steps:
     - name: Copy workflow manifests
+      env:
+        IMAGE_PREFIX: '001688053317.dkr.ecr.us-east-1.amazonaws.com/'
       run: |
         set -e
 
